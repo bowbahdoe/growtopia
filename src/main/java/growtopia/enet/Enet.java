@@ -470,6 +470,43 @@ public final class Enet {
             return null;
         }
 
+        public char[] data() {
+            MemoryAddress packet = MemoryAccess.getAddressAtOffset(
+                    this.event,
+                    LAYOUT.byteOffset(
+                            MemoryLayout.PathElement.groupElement("packet")
+                    )
+            );
+
+            MemorySegment packetData = packet.asSegmentRestricted(Packet.LAYOUT.byteSize());
+            final var packetLength = MemoryAccess.getLongAtOffset(
+                    packetData,
+                    Packet.LAYOUT.byteOffset(
+                            MemoryLayout.PathElement.groupElement("dataLength")
+                    )
+            );
+            final var packetDataPtr =  MemoryAccess.getAddressAtOffset(
+                    packetData,
+                    Packet.LAYOUT.byteOffset(
+                            MemoryLayout.PathElement.groupElement("data")
+                    )
+            );
+            final var packetDataArray = packetDataPtr.asSegmentRestricted(
+                    MemoryLayout.ofSequence(packetLength, C_CHAR).byteSize()
+            );
+
+            char[] data = new char[(int) packetLength];
+            for (int i = 0; i < packetLength; i++) {
+                data[i] = (char) MemoryAccess.getByteAtOffset(packetDataArray, C_CHAR.byteSize() * i);
+            }
+
+            return data;
+        }
+
+        public String dataAsString() {
+            return String.valueOf(this.data());
+        }
+
         public static final class None extends Event {
             private None(MemorySegment event) {
                 super(event);
@@ -485,43 +522,6 @@ public final class Enet {
         public static final class Receive extends Event {
             private Receive(MemorySegment event) {
                 super(event);
-            }
-
-            public char[] data() {
-                MemoryAddress packet = MemoryAccess.getAddressAtOffset(
-                        this.event,
-                        LAYOUT.byteOffset(
-                                MemoryLayout.PathElement.groupElement("packet")
-                        )
-                );
-
-                MemorySegment packetData = packet.asSegmentRestricted(Packet.LAYOUT.byteSize());
-                final var packetLength = MemoryAccess.getLongAtOffset(
-                        packetData,
-                        Packet.LAYOUT.byteOffset(
-                                MemoryLayout.PathElement.groupElement("dataLength")
-                        )
-                );
-                final var packetDataPtr =  MemoryAccess.getAddressAtOffset(
-                        packetData,
-                        Packet.LAYOUT.byteOffset(
-                                MemoryLayout.PathElement.groupElement("data")
-                        )
-                );
-                final var packetDataArray = packetDataPtr.asSegmentRestricted(
-                        MemoryLayout.ofSequence(packetLength, C_CHAR).byteSize()
-                );
-
-                char[] data = new char[(int) packetLength];
-                for (int i = 0; i < packetLength; i++) {
-                    data[i] = (char) MemoryAccess.getByteAtOffset(packetDataArray, C_CHAR.byteSize() * i);
-                }
-
-                return data;
-            }
-
-            public String dataAsString() {
-                return String.valueOf(this.data());
             }
         }
 

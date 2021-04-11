@@ -13,6 +13,8 @@ public final class EventHandlerImpl implements EventHandler {
     @Override
     public void onConnect(Enet.Event.Connect connectEvent) {
         System.out.println(connectEvent);
+
+        System.out.println(connectEvent.dataAsString());
     }
 
     @Override
