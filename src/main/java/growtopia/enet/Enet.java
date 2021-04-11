@@ -512,7 +512,9 @@ public final class Enet {
                         MemoryLayout.ofSequence(packetLength, C_CHAR).byteSize()
                 );
                 char[] data = new char[(int) packetLength];
+                System.out.println("packetLength = " + packetLength);
                 for (int i = 0; i < packetLength; i++) {
+                    System.out.println("i = " + i);
                     data[i] = MemoryAccess.getCharAtIndex(packetDataArray, i);
                 }
 
