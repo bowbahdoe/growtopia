@@ -509,13 +509,12 @@ public final class Enet {
                         )
                 );
                 final var packetDataArray = packetDataPtr.asSegmentRestricted(
-                        MemoryLayout.ofSequence(packetLength * 2, C_CHAR).byteSize()
+                        MemoryLayout.ofSequence(packetLength, C_CHAR).byteSize()
                 );
+
                 char[] data = new char[(int) packetLength];
-                System.out.println("packetLength = " + packetLength);
                 for (int i = 0; i < packetLength; i++) {
-                    System.out.println("i = " + i);
-                    data[i] = MemoryAccess.getChar(packetDataArray.address().addOffset(i).asSegmentRestricted(C_CHAR.byteSize()));
+                    data[i] = (char) MemoryAccess.getByteAtOffset(packetDataArray, C_CHAR.byteSize() * i);
                 }
 
                 return data;
