@@ -480,7 +480,7 @@ public final class Enet {
                 this.event,
                     LAYOUT.byteOffset(MemoryLayout.PathElement.groupElement("peer"))
             );
-            return new Peer(peerAddr);
+            return Peer.fromUnsafe(peerAddr);
         }
 
         public static final class None extends Event {
