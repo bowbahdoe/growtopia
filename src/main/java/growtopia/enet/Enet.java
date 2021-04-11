@@ -4,6 +4,7 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.VarHandle;
 import java.lang.ref.Cleaner;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
@@ -470,7 +471,7 @@ public final class Enet {
             return null;
         }
 
-        public char[] data() {
+        public String dataAsString() {
             MemoryAddress packet = MemoryAccess.getAddressAtOffset(
                     this.event,
                     LAYOUT.byteOffset(
@@ -495,16 +496,12 @@ public final class Enet {
                     MemoryLayout.ofSequence(packetLength, C_CHAR).byteSize()
             );
 
-            char[] data = new char[(int) packetLength];
+            byte[] data = new byte[(int) packetLength];
             for (int i = 0; i < packetLength; i++) {
-                data[i] = (char) MemoryAccess.getByteAtOffset(packetDataArray, C_CHAR.byteSize() * i);
+                data[i] = MemoryAccess.getByteAtOffset(packetDataArray, C_CHAR.byteSize() * i);
             }
 
-            return data;
-        }
-
-        public String dataAsString() {
-            return String.valueOf(this.data());
+            return new String(data, StandardCharsets.US_ASCII);
         }
 
         public static final class None extends Event {
