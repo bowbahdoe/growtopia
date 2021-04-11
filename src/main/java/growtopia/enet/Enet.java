@@ -95,6 +95,20 @@ public final class Enet {
             FunctionDescriptor.of(C_INT, C_POINTER, C_POINTER, C_INT)
     );
 
+    /* enet_packet_create */
+    private static final MethodHandle ENET_PACKET_CREATE = CLinker.getInstance().downcallHandle(
+            LIBRARY_LOOKUP.lookup("enet_packet_create").get(),
+            MethodType.methodType(MemoryAddress.class, MemoryAddress.class, long.class, int.class),
+            FunctionDescriptor.of(C_POINTER, C_POINTER, C_LONG, C_INT)
+    );
+
+    /* enet_peer_send */
+    private static final MethodHandle ENET_PEER_SEND = CLinker.getInstance().downcallHandle(
+            LIBRARY_LOOKUP.lookup("enet_peer_send").get(),
+            MethodType.methodType(MemoryAddress.class, byte.class, MemoryAddress.class),
+            FunctionDescriptor.of(C_POINTER, C_CHAR, C_POINTER)
+    );
+
     /**
      * The address for a connected client.
      */
@@ -466,9 +480,7 @@ public final class Enet {
                 this.event,
                     LAYOUT.byteOffset(MemoryLayout.PathElement.groupElement("peer"))
             );
-
-
-            return null;
+            return new Peer(peerAddr);
         }
 
         public static final class None extends Event {
@@ -496,6 +508,10 @@ public final class Enet {
                                 MemoryLayout.PathElement.groupElement("packet")
                         )
                 );
+
+                if (packet.equals(MemoryAddress.NULL)) {
+                    throw new RuntimeException("Got a null packet from the event, no data available");
+                }
 
                 MemorySegment packetData = packet.asSegmentRestricted(Packet.LAYOUT.byteSize());
                 final var packetLength = MemoryAccess.getLongAtOffset(
@@ -576,16 +592,28 @@ public final class Enet {
     public static final class Peer implements AutoCloseable {
         private static final MemoryLayout LAYOUT = MemoryLayout.ofStruct();
 
-        private Peer() {}
+        private final MemoryAddress peerPtr;
 
 
-        public void disconnectLater() {}
+        private Peer(MemoryAddress peerPtr) {
+            this.peerPtr = peerPtr;
+        }
+
+        static Peer fromUnsafe(MemoryAddress peerPtr) {
+            return new Peer(peerPtr);
+        }
 
         public void send(Packet packet) {
             final var bitFlags = packet.flags()
                     .stream()
                     .reduce(0, (a, b) -> a & b.bit(), (a, b) -> a & b);
             final var data = packet.data();
+            try (final var buffer = MemorySegment.allocateNative(MemoryLayout.ofSequence(data.length, C_CHAR))) {
+                final var packetPtr = (MemoryAddress) ENET_PACKET_CREATE.invoke(buffer.address(), data.length, bitFlags);
+                ENET_PEER_SEND.invoke(this.peerPtr, 0, packetPtr);
+            } catch (Throwable throwable) {
+                throw new RuntimeException(throwable);
+            }
         }
 
         @Override
