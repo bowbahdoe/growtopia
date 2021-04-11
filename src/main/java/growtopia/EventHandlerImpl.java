@@ -7,6 +7,7 @@ public final class EventHandlerImpl implements EventHandler {
     @Override
     public void onReceive(Enet.Event.Receive receiveEvent) {
         System.out.println(receiveEvent);
+        System.out.println(receiveEvent.dataAsString());
     }
 
     @Override

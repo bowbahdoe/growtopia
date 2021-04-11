@@ -26,7 +26,7 @@ public final class Enet {
 
     private static LibraryLookup lookup() {
         try {
-            return LibraryLookup.ofPath(Paths.get("libenet.so"));
+            return LibraryLookup.ofPath(Paths.get("libenet.so").toAbsolutePath());
         } catch (Throwable t) {
             return LibraryLookup.ofPath(
                     Paths.get("/", "usr", "local", "lib", "libenet.dylib")
@@ -439,7 +439,7 @@ public final class Enet {
                 CLinker.C_POINTER.withName("packet")
         ).withName("_ENetEvent");
 
-        private final MemorySegment event;
+        protected final MemorySegment event;
 
         private Event(MemorySegment event) {
             this.event = event;
@@ -487,8 +487,40 @@ public final class Enet {
                 super(event);
             }
 
-            public byte[] data() {
-                return null;
+            public char[] data() {
+                MemoryAddress packet = MemoryAccess.getAddressAtOffset(
+                        this.event,
+                        LAYOUT.byteOffset(
+                                MemoryLayout.PathElement.groupElement("packet")
+                        )
+                );
+
+                MemorySegment packetData = packet.asSegmentRestricted(Packet.LAYOUT.byteSize());
+                final var packetLength = MemoryAccess.getLongAtOffset(
+                        packetData,
+                        Packet.LAYOUT.byteOffset(
+                                MemoryLayout.PathElement.groupElement("dataLength")
+                        )
+                );
+                final var packetDataPtr =  MemoryAccess.getAddressAtOffset(
+                        packetData,
+                        Packet.LAYOUT.byteOffset(
+                                MemoryLayout.PathElement.groupElement("data")
+                        )
+                );
+                final var packetDataArray = packetDataPtr.asSegmentRestricted(
+                        MemoryLayout.ofSequence(packetLength, C_CHAR).byteSize()
+                );
+                char[] data = new char[(int) packetLength];
+                for (int i = 0; i < packetLength; i++) {
+                    data[i] = MemoryAccess.getCharAtIndex(packetDataArray, i);
+                }
+
+                return data;
+            }
+
+            public String dataAsString() {
+                return String.valueOf(this.data());
             }
         }
 
@@ -500,7 +532,15 @@ public final class Enet {
     }
 
     public static final class Packet {
-        static final MemoryLayout LAYOUT = MemoryLayout.ofStruct();
+        static final MemoryLayout LAYOUT = MemoryLayout.ofStruct(
+                CLinker.C_LONG.withName("referenceCount"),
+                CLinker.C_INT.withName("flags"),
+                MemoryLayout.ofPaddingBits(32L),
+                CLinker.C_POINTER.withName("data"),
+                CLinker.C_LONG.withName("dataLength"),
+                CLinker.C_POINTER.withName("freeCallback"),
+                CLinker.C_POINTER.withName("userData")
+        ).withName("_ENetPacket");
 
         public enum Flag {
             RELIABLE, UNSEQUENCED;
