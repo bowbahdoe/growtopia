@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/growtopia.iml" filepath="$PROJECT_DIR$/growtopia.iml" />
+      <module fileurl="file://$PROJECT_DIR$/twodee.iml" filepath="$PROJECT_DIR$/twodee.iml" />
     </modules>
   </component>
 </project>

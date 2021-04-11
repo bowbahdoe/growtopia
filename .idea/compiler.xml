@@ -6,11 +6,11 @@
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
-        <module name="growtopia" />
+        <module name="twodee" />
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
-      <module name="growtopia" target="16" />
+      <module name="twodee" target="16" />
     </bytecodeTargetLevel>
   </component>
 </project>

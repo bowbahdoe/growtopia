@@ -4,6 +4,7 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.VarHandle;
 import java.lang.ref.Cleaner;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.EnumSet;
@@ -25,9 +26,7 @@ public final class Enet {
 
     private static LibraryLookup lookup() {
         try {
-            return LibraryLookup.ofPath(
-                    Paths.get("/", "usr", "local", "lib", "libenet.dylib")
-            );
+            return LibraryLookup.ofPath(Paths.get("libenet.so"));
         } catch (Throwable t) {
             return LibraryLookup.ofPath(
                     Paths.get("/", "usr", "local", "lib", "libenet.dylib")
