@@ -589,7 +589,7 @@ public final class Enet {
         }
     }
 
-    public static final class Peer implements AutoCloseable {
+    public static final class Peer {
         private static final MemoryLayout LAYOUT = MemoryLayout.ofStruct();
 
         private final MemoryAddress peerPtr;
@@ -609,17 +609,15 @@ public final class Enet {
                     .reduce(0, (a, b) -> a & b.bit(), (a, b) -> a & b);
             final var data = packet.data();
             try (final var buffer = MemorySegment.allocateNative(MemoryLayout.ofSequence(data.length, C_CHAR))) {
+                for (int i = 0; i < data.length; i++) {
+                    MemoryAccess.setByteAtOffset(buffer,i * C_CHAR.byteSize(), data[i]);
+                }
                 final var packetPtr = (MemoryAddress) ENET_PACKET_CREATE.invoke(buffer.address(), data.length, bitFlags);
                 int status = (int) ENET_PEER_SEND.invoke(this.peerPtr, 0, packetPtr);
                 return status >= 0;
             } catch (Throwable throwable) {
                 throw new RuntimeException(throwable);
             }
-        }
-
-        @Override
-        public void close() {
-
         }
     }
 }
