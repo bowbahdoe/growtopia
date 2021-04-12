@@ -105,8 +105,8 @@ public final class Enet {
     /* enet_peer_send */
     private static final MethodHandle ENET_PEER_SEND = CLinker.getInstance().downcallHandle(
             LIBRARY_LOOKUP.lookup("enet_peer_send").get(),
-            MethodType.methodType(MemoryAddress.class, byte.class, MemoryAddress.class),
-            FunctionDescriptor.of(C_POINTER, C_CHAR, C_POINTER)
+            MethodType.methodType(int.class, MemoryAddress.class, byte.class, MemoryAddress.class),
+            FunctionDescriptor.of(C_INT, C_POINTER, C_CHAR, C_POINTER)
     );
 
     /**
@@ -603,14 +603,15 @@ public final class Enet {
             return new Peer(peerPtr);
         }
 
-        public void send(Packet packet) {
+        public boolean send(Packet packet) {
             final var bitFlags = packet.flags()
                     .stream()
                     .reduce(0, (a, b) -> a & b.bit(), (a, b) -> a & b);
             final var data = packet.data();
             try (final var buffer = MemorySegment.allocateNative(MemoryLayout.ofSequence(data.length, C_CHAR))) {
                 final var packetPtr = (MemoryAddress) ENET_PACKET_CREATE.invoke(buffer.address(), data.length, bitFlags);
-                ENET_PEER_SEND.invoke(this.peerPtr, 0, packetPtr);
+                int status = (int) ENET_PEER_SEND.invoke(this.peerPtr, 0, packetPtr);
+                return status >= 0;
             } catch (Throwable throwable) {
                 throw new RuntimeException(throwable);
             }
