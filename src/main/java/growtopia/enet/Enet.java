@@ -10,6 +10,7 @@ import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.EnumSet;
 
+import java.util.Objects;
 import jdk.incubator.foreign.*;
 
 import static jdk.incubator.foreign.CLinker.*;
@@ -586,6 +587,24 @@ public final class Enet {
 
         public EnumSet<Flag> flags() {
             return EnumSet.copyOf(this.flags);
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            return o instanceof Packet packet && Arrays.equals(data, packet.data) && flags.equals(packet.flags);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(Arrays.hashCode(this.data), this.flags);
+        }
+
+        @Override
+        public String toString() {
+            return "Packet[" +
+                    "data=" + Arrays.toString(data) +
+                    ", flags=" + flags +
+                    ']';
         }
     }
 
