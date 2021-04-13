@@ -3,6 +3,7 @@ package growtopia;
 import growtopia.enet.Enet;
 import growtopia.enet.EventHandler;
 import java.nio.charset.StandardCharsets;
+import java.util.Calendar;
 import java.util.EnumSet;
 
 public final class EventHandlerImpl implements EventHandler {
@@ -11,12 +12,12 @@ public final class EventHandlerImpl implements EventHandler {
         System.out.println(receiveEvent);
         System.out.println(receiveEvent.dataAsString());
 
-        receiveEvent.peer().send(
-                Enet.Packet.create(
-                        "hello".getBytes(StandardCharsets.US_ASCII),
-                        EnumSet.of(Enet.Packet.Flag.RELIABLE)
-                )
+        final var packet = Enet.Packet.create(
+                "hello".getBytes(StandardCharsets.US_ASCII),
+                EnumSet.of(Enet.Packet.Flag.RELIABLE)
         );
+        receiveEvent.peer().send(packet);
+        receiveEvent.peer().send(packet);
     }
 
     @Override

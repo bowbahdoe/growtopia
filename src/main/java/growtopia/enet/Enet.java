@@ -132,7 +132,7 @@ public final class Enet {
                 MemoryLayout.PathElement.groupElement("port")
         );
 
-        private MemorySegment asStruct() {
+        MemorySegment asStruct() {
             final var segment = MemorySegment.allocateNative(LAYOUT);
             HOST_HANDLE.set(segment, this.host());
             PORT_HANDLE.set(segment, this.port());
@@ -476,14 +476,6 @@ public final class Enet {
             };
         }
 
-        public Peer peer() {
-            final var peerAddr = MemoryAccess.getAddressAtOffset(
-                this.event,
-                    LAYOUT.byteOffset(MemoryLayout.PathElement.groupElement("peer"))
-            );
-            return Peer.fromUnsafe(peerAddr);
-        }
-
         public static final class None extends Event {
             private None(MemorySegment event) {
                 super(event);
@@ -493,6 +485,14 @@ public final class Enet {
         public static final class Connect extends Event {
             private Connect(MemorySegment event) {
                 super(event);
+            }
+
+            public Peer peer() {
+                final var peerAddr = MemoryAccess.getAddressAtOffset(
+                        this.event,
+                        LAYOUT.byteOffset(MemoryLayout.PathElement.groupElement("peer"))
+                );
+                return Peer.fromUnsafe(peerAddr);
             }
         }
 
@@ -538,6 +538,14 @@ public final class Enet {
 
                 return new String(data, StandardCharsets.US_ASCII);
             }
+
+            public Peer peer() {
+                final var peerAddr = MemoryAccess.getAddressAtOffset(
+                        this.event,
+                        LAYOUT.byteOffset(MemoryLayout.PathElement.groupElement("peer"))
+                );
+                return Peer.fromUnsafe(peerAddr);
+            }
         }
 
         public static final class Disconnect extends Event {
@@ -573,8 +581,8 @@ public final class Enet {
         private final EnumSet<Flag> flags;
 
         private Packet(byte[] data, EnumSet<Flag> flags) {
-            this.data = data;
-            this.flags = flags;
+            this.data = Arrays.copyOf(data, data.length);
+            this.flags = EnumSet.copyOf(flags);
         }
 
         public static Packet create(byte[] data, EnumSet<Flag> flags) {
@@ -582,7 +590,7 @@ public final class Enet {
         }
 
         public byte[] data() {
-            return Arrays.copyOf(data, data.length);
+            return Arrays.copyOf(this.data, data.length);
         }
 
         public EnumSet<Flag> flags() {
@@ -591,7 +599,9 @@ public final class Enet {
 
         @Override
         public boolean equals(Object o) {
-            return o instanceof Packet packet && Arrays.equals(data, packet.data) && flags.equals(packet.flags);
+            return o instanceof Packet packet &&
+                    Arrays.equals(this.data, packet.data) &&
+                    this.flags.equals(packet.flags);
         }
 
         @Override
@@ -602,24 +612,158 @@ public final class Enet {
         @Override
         public String toString() {
             return "Packet[" +
-                    "data=" + Arrays.toString(data) +
-                    ", flags=" + flags +
+                    "data=" + Arrays.toString(this.data) +
+                    ", flags=" + this.flags +
                     ']';
         }
     }
 
     public static final class Peer {
-        private static final MemoryLayout LAYOUT = MemoryLayout.ofStruct();
+        private static final MemoryLayout LAYOUT = MemoryLayout.ofStruct(
+                MemoryLayout.ofStruct(
+                        CLinker.C_POINTER.withName("next"),
+                        CLinker.C_POINTER.withName("previous")
+                ).withName("dispatchList"),
+                CLinker.C_POINTER.withName("host"),
+                CLinker.C_SHORT.withName("outgoingPeerID"),
+                CLinker.C_SHORT.withName("incomingPeerID"),
+                CLinker.C_INT.withName("connectID"),
+                CLinker.C_CHAR.withName("outgoingSessionID"),
+                CLinker.C_CHAR.withName("incomingSessionID"),
+                MemoryLayout.ofPaddingBits(16L),
+                MemoryLayout.ofStruct(
+                        CLinker.C_INT.withName("host"),
+                        CLinker.C_SHORT.withName("port"),
+                        MemoryLayout.ofPaddingBits(16L)
+                ).withName("address"),
+                MemoryLayout.ofPaddingBits(32L),
+                CLinker.C_POINTER.withName("data"),
+                CLinker.C_INT.withName("state"),
+                MemoryLayout.ofPaddingBits(32L),
+                CLinker.C_POINTER.withName("channels"),
+                CLinker.C_LONG.withName("channelCount"),
+                CLinker.C_INT.withName("incomingBandwidth"),
+                CLinker.C_INT.withName("outgoingBandwidth"),
+                CLinker.C_INT.withName("incomingBandwidthThrottleEpoch"),
+                CLinker.C_INT.withName("outgoingBandwidthThrottleEpoch"),
+                CLinker.C_INT.withName("incomingDataTotal"),
+                CLinker.C_INT.withName("outgoingDataTotal"),
+                CLinker.C_INT.withName("lastSendTime"),
+                CLinker.C_INT.withName("lastReceiveTime"),
+                CLinker.C_INT.withName("nextTimeout"),
+                CLinker.C_INT.withName("earliestTimeout"),
+                CLinker.C_INT.withName("packetLossEpoch"),
+                CLinker.C_INT.withName("packetsSent"),
+                CLinker.C_INT.withName("packetsLost"),
+                CLinker.C_INT.withName("packetLoss"),
+                CLinker.C_INT.withName("packetLossVariance"),
+                CLinker.C_INT.withName("packetThrottle"),
+                CLinker.C_INT.withName("packetThrottleLimit"),
+                CLinker.C_INT.withName("packetThrottleCounter"),
+                CLinker.C_INT.withName("packetThrottleEpoch"),
+                CLinker.C_INT.withName("packetThrottleAcceleration"),
+                CLinker.C_INT.withName("packetThrottleDeceleration"),
+                CLinker.C_INT.withName("packetThrottleInterval"),
+                CLinker.C_INT.withName("pingInterval"),
+                CLinker.C_INT.withName("timeoutLimit"),
+                CLinker.C_INT.withName("timeoutMinimum"),
+                CLinker.C_INT.withName("timeoutMaximum"),
+                CLinker.C_INT.withName("lastRoundTripTime"),
+                CLinker.C_INT.withName("lowestRoundTripTime"),
+                CLinker.C_INT.withName("lastRoundTripTimeVariance"),
+                CLinker.C_INT.withName("highestRoundTripTimeVariance"),
+                CLinker.C_INT.withName("roundTripTime"),
+                CLinker.C_INT.withName("roundTripTimeVariance"),
+                CLinker.C_INT.withName("mtu"),
+                CLinker.C_INT.withName("windowSize"),
+                CLinker.C_INT.withName("reliableDataInTransit"),
+                CLinker.C_SHORT.withName("outgoingReliableSequenceNumber"),
+                MemoryLayout.ofPaddingBits(16L),
+                MemoryLayout.ofStruct(
+                        MemoryLayout.ofStruct(
+                                CLinker.C_POINTER.withName("next"),
+                                CLinker.C_POINTER.withName("previous")
+                        ).withName("sentinel")
+                ).withName("acknowledgements"),
+                MemoryLayout.ofStruct(
+                        MemoryLayout.ofStruct(
+                                CLinker.C_POINTER.withName("next"),
+                                CLinker.C_POINTER.withName("previous")
+                        ).withName("sentinel")
+                ).withName("sentReliableCommands"),
+                MemoryLayout.ofStruct(
+                        MemoryLayout.ofStruct(
+                                CLinker.C_POINTER.withName("next"),
+                                CLinker.C_POINTER.withName("previous")
+                        ).withName("sentinel")
+                ).withName("sentUnreliableCommands"),
+                MemoryLayout.ofStruct(
+                        MemoryLayout.ofStruct(
+                                CLinker.C_POINTER.withName("next"),
+                                CLinker.C_POINTER.withName("previous")
+                        ).withName("sentinel")
+                ).withName("outgoingCommands"),
+                MemoryLayout.ofStruct(
+                        MemoryLayout.ofStruct(
+                                CLinker.C_POINTER.withName("next"),
+                                CLinker.C_POINTER.withName("previous")
+                        ).withName("sentinel")
+                ).withName("dispatchedCommands"),
+                CLinker.C_SHORT.withName("flags"),
+                CLinker.C_SHORT.withName("reserved"),
+                CLinker.C_SHORT.withName("incomingUnsequencedGroup"),
+                CLinker.C_SHORT.withName("outgoingUnsequencedGroup"),
+                MemoryLayout.ofSequence(32L, CLinker.C_INT).withName("unsequencedWindow"),
+                CLinker.C_INT.withName("eventData"),
+                MemoryLayout.ofPaddingBits(32L),
+                CLinker.C_LONG.withName("totalWaitingData")
+        ).withName("_ENetPeer");
 
         private final MemoryAddress peerPtr;
 
-
         private Peer(MemoryAddress peerPtr) {
+            MemorySegment count = MemorySegment.allocateNative(C_INT.byteSize());
+            MemoryAccess.setInt(count, 0);
+            MemoryAccess.setAddressAtOffset(
+                    count,
+                    LAYOUT.byteOffset(
+                            MemoryLayout.PathElement.groupElement("data")
+                    ),
+                    count.address()
+            );
             this.peerPtr = peerPtr;
         }
 
         static Peer fromUnsafe(MemoryAddress peerPtr) {
             return new Peer(peerPtr);
+        }
+
+        public int connectID() {
+            return MemoryAccess.getIntAtOffset(
+                    this.peerPtr.asSegmentRestricted(LAYOUT.byteSize()),
+                    LAYOUT.byteOffset(
+                            MemoryLayout.PathElement.groupElement("connectID")
+                    )
+            );
+        }
+
+        public Address address() {
+            return new Address(
+                    MemoryAccess.getIntAtOffset(
+                            this.peerPtr.asSegmentRestricted(LAYOUT.byteSize()),
+                            LAYOUT.byteOffset(
+                                    MemoryLayout.PathElement.groupElement("address"),
+                                    MemoryLayout.PathElement.groupElement("host")
+                            )
+                    ),
+                    MemoryAccess.getShortAtOffset(
+                            this.peerPtr.asSegmentRestricted(LAYOUT.byteSize()),
+                            LAYOUT.byteOffset(
+                                    MemoryLayout.PathElement.groupElement("address"),
+                                    MemoryLayout.PathElement.groupElement("port")
+                            )
+                    )
+            );
         }
 
         public boolean send(Packet packet) {
@@ -637,6 +781,25 @@ public final class Enet {
             } catch (Throwable throwable) {
                 throw new RuntimeException(throwable);
             }
+        }
+
+        // TODO: Provide stable identity for connections. For now you can decide to use connectID & address if you need something.
+
+        @Override
+        public boolean equals(Object o) {
+            return this == o;
+        }
+
+        @Override
+        public int hashCode() {
+            return System.identityHashCode(this);
+        }
+
+        @Override
+        public String toString() {
+            return "Peer[" +
+                    "peerPtr=" + peerPtr +
+                    ']';
         }
     }
 }
