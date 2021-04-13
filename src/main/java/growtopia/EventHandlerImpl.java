@@ -12,10 +12,15 @@ public final class EventHandlerImpl implements EventHandler {
         System.out.println(receiveEvent);
         System.out.println(receiveEvent.dataAsString());
 
+        final var peer = receiveEvent.peer();
+        System.out.println(peer);
+
         final var packet = Enet.Packet.create(
                 "hello".getBytes(StandardCharsets.US_ASCII),
                 EnumSet.of(Enet.Packet.Flag.RELIABLE)
         );
+
+        // sends the nonsense packet
         receiveEvent.peer().send(packet);
         receiveEvent.peer().send(packet);
     }

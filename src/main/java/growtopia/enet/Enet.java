@@ -789,7 +789,9 @@ public final class Enet {
         @Override
         public String toString() {
             return "Peer[" +
-                    "peerPtr=" + peerPtr +
+                    "peerPtr=" + this.peerPtr +
+                    ", connectID=" + this.connectID() +
+                    ", address=" + this.address() +
                     ']';
         }
     }
