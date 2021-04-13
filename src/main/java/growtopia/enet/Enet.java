@@ -722,15 +722,6 @@ public final class Enet {
         private final MemoryAddress peerPtr;
 
         private Peer(MemoryAddress peerPtr) {
-            MemorySegment count = MemorySegment.allocateNative(C_INT.byteSize());
-            MemoryAccess.setInt(count, 0);
-            MemoryAccess.setAddressAtOffset(
-                    count,
-                    LAYOUT.byteOffset(
-                            MemoryLayout.PathElement.groupElement("data")
-                    ),
-                    count.address()
-            );
             this.peerPtr = peerPtr;
         }
 
