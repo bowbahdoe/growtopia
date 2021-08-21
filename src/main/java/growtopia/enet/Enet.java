@@ -5,7 +5,6 @@ import java.lang.invoke.MethodType;
 import java.lang.invoke.VarHandle;
 import java.lang.ref.Cleaner;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.EnumSet;
@@ -418,14 +417,14 @@ public final class Enet {
                     }
                     else {
                         final var ev = Event.fromUnsafe(eventSegment);
-                        if (ev instanceof Event.Receive receive) {
-                            callback.onReceive(receive);
+                        if (ev instanceof Event.Receive) {
+                            callback.onReceive((Event.Receive) ev);
                         }
-                        else if (ev instanceof Event.Connect connect) {
-                            callback.onConnect(connect);
+                        else if (ev instanceof Event.Connect) {
+                            callback.onConnect((Event.Connect) ev);
                         }
-                        else if (ev instanceof Event.Disconnect disconnect) {
-                            callback.onDisconnect(disconnect);
+                        else if (ev instanceof Event.Disconnect) {
+                            callback.onDisconnect((Event.Disconnect) ev);
                         }
                     }
                 } catch (Throwable throwable) {
@@ -599,9 +598,9 @@ public final class Enet {
 
         @Override
         public boolean equals(Object o) {
-            return o instanceof Packet packet &&
-                    Arrays.equals(this.data, packet.data) &&
-                    this.flags.equals(packet.flags);
+            return o instanceof Packet &&
+                    Arrays.equals(this.data, ((Packet) o).data) &&
+                    this.flags.equals(((Packet) o).flags);
         }
 
         @Override
@@ -778,12 +777,12 @@ public final class Enet {
 
         @Override
         public boolean equals(Object o) {
-            return this == o;
+            return o instanceof Peer && this.peerPtr.equals(((Peer) o).peerPtr);
         }
 
         @Override
         public int hashCode() {
-            return System.identityHashCode(this);
+            return this.peerPtr.hashCode();
         }
 
         @Override
